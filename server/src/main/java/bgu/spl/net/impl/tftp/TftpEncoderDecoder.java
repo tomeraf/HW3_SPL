@@ -11,8 +11,12 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
     @Override
     public byte[] decodeNextByte(byte nextByte) {
         // TODO: implement this
+        if (nextByte == '\n') {
+            return popString().getBytes(StandardCharsets.UTF_16);
+        }
 
-        return null;
+        pushByte(nextByte);
+        return null; //not a line yet
     }
 
     private void pushByte(byte nextByte) {
