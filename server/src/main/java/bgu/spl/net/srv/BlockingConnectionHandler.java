@@ -9,8 +9,8 @@ import java.net.Socket;
 
 public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler<T> {
 
-    private final MessagingProtocol<T> protocol;
-    private final MessageEncoderDecoder<T> encdec;
+    private final MessagingProtocol<T> protocol;//to be TftpProtocol
+    private final MessageEncoderDecoder<T> encdec;//to be TftpEncoderDecoder
     private final Socket sock;
     private BufferedInputStream in;
     private BufferedOutputStream out;

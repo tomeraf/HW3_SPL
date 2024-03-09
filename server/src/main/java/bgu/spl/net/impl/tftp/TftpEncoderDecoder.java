@@ -1,46 +1,33 @@
 package bgu.spl.net.impl.tftp;
+
 import bgu.spl.net.api.MessageEncoderDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
+
+import java.util.LinkedList;
+import java.util.List;
+
 
 public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
-    //TODO: Implement here the TFTP encoder and decoder
-    private byte[] bytes = new byte[512];
-    private int len = 0;
+    private List<Byte> b = new LinkedList<Byte>();
 
-    @Override
     public byte[] decodeNextByte(byte nextByte) {
-        // TODO: implement this
-        if (nextByte == '\n') {
-            return popString().getBytes(StandardCharsets.UTF_16);
+        if(nextByte == '0'){
+            byte[] ans = new byte[b.size()];
+            for(int i = 0; i< b.size(); i++){
+                ans[i] = b.get(i);
+            }
+            b=new LinkedList<Byte>();
+            return ans;
         }
-
-        pushByte(nextByte);
-        return null; //not a line yet
+        b.add(nextByte);
+        return null;
     }
 
-    private void pushByte(byte nextByte) {
-        if (len >= bytes.length) {
-            bytes = Arrays.copyOf(bytes, len * 2);
+    public byte[] encode(byte[] message) {
+        byte[] ans = new byte[message.length+1];
+        for(int i = 0; i<ans.length; i++){
+            ans[i]=message[i];
         }
-
-        bytes[len++] = nextByte;
-    }
-
-    private String popString() {
-        //notice that we explicitly requesting that the string will be decoded from UTF-8
-        //this is not actually required as it is the default encoding in java.
-        String result = new String(bytes, 0, len, StandardCharsets.UTF_8);
-        len = 0;
-        return result;
-    }
-
-    @Override
-    public byte[] encode(byte[] message){
-        //TODO: implement this [v]
-        String s = new String(message, StandardCharsets.UTF_16);
-        byte[] outbytes = s.getBytes(StandardCharsets.UTF_8);
-
-        return outbytes;
+        ans[ans.length-1] = 0;
+        return ans;
     }
 }
