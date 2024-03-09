@@ -125,6 +125,22 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         connections.send(connectionId,BMsg);
     }
 
+    private void ACK() {
+            byte[] BMsg="ACK 0".getBytes();
+            connections.send(connectionId,BMsg);
+    }
+
+    private void ACK(short blockNumber) {
+        byte[] ACK = "ACK".getBytes();
+        byte first = (byte) (blockNumber & 0xFF); // Extracts the lower byte
+        byte second = (byte) ((blockNumber >> 8) & 0xFF); // Shifts and extracts the higher byte
+        byte[] BMsg = {0,4,first,second};
+        byte[] send = new byte[ACK.length + BMsg.length];
+        System.arraycopy(ACK, 0, send, 0, ACK.length);
+        System.arraycopy(BMsg, 0, send, ACK.length, BMsg.length);
+        connections.send(connectionId,send);
+    }
+
     private void RRQ(byte[] messageData){
 
 
