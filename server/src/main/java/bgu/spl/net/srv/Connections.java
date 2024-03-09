@@ -4,7 +4,7 @@ import java.io.IOException;
 
 public interface Connections<T> {
 
-    void connect(int connectionId, ConnectionHandler<T> handler);
+    boolean connect(int connectionId, ConnectionHandler<T> handler);
 
     boolean send(int connectionId, T msg);
 
