@@ -22,20 +22,20 @@ public class ConnectionsImpl <T > implements Connections <T >{
     //this function sends the msg to the handler (uses the reference interface ConnectionHandler but in practice uses the instance of blockingConnectionHandler) of the connection ID specified.
     @Override
     public boolean send(int connectionId, T msg) {
-        ConnectionHandler<T> c = connections.get(connectionId);
-        if (c == null)//map function "get" can return null if no id was found.
+        ConnectionHandler<T> ch = connections.get(connectionId);
+        if (ch == null)//map function "get" can return null if no id was found.
             return false;
-        c.send(msg);
+        ch.send(msg);
         return  true;
     }
 
     // this function removes the handler from the map and closes the handler.
     @Override
     public void disconnect(int connectionId) {
-        ConnectionHandler c = connections.remove(connectionId);
-        if (c != null) {
+        ConnectionHandler ch = connections.remove(connectionId);
+        if (ch != null) {
             try {
-                c.close();// handler implements closable.
+                ch.close();// handler implements closable.
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
