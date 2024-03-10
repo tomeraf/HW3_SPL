@@ -10,6 +10,11 @@ public class LineMessageEncoderDecoder implements MessageEncoderDecoder<String> 
     private int len = 0;
 
     @Override
+    public void End() {
+
+    }
+
+    @Override
     public String decodeNextByte(byte nextByte) {
         //notice that the top 128 ascii characters have the same representation as their utf-8 counterparts
         //this allow us to do the following comparison

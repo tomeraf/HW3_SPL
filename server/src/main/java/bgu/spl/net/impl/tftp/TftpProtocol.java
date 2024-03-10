@@ -2,30 +2,40 @@ package bgu.spl.net.impl.tftp;
 
 import bgu.spl.net.api.BidiMessagingProtocol;
 import bgu.spl.net.srv.Connections;
-import jdk.internal.net.http.common.Pair;
 
-import javax.tools.JavaFileManager;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
+class UsersHolder{
+    public static Map<Integer,Boolean> users=new HashMap<>(); ;
+
+
+}
+
 public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
+    final  private String PATH =  "server/Flies/";
     private boolean shouldTerminate = false;
     private int connectionId;
     private Connections<byte[]> connections;
-    private Map<Integer,Boolean> users;
-
+    private LinkedList<byte[]> dataHolder;
+    private String FileName;
+    private Queue<byte[]> packetsToSend;
+    private String toSend;
     @Override
     public void start(int connectionId, Connections<byte[]> connections) {
-        users =new HashMap<>();
         this.connectionId=connectionId;
         this.connections=connections;
-        users.put(connectionId,false);
+        UsersHolder.users.put(connectionId,false);
     }
 
     @Override
     public void process(byte[] message) {//tomer and mor created
         short opcode = (short) (((short) message[0]) << 8 | (short) (message[1]) & 0x00ff);
+
         byte[] messageData = new byte[message.length - 2];
         System.arraycopy(message, 2, messageData, 0, message.length - 2);
 
@@ -42,10 +52,14 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                         }
                     case 3:
                         if(isLoggedIn()) {
-                            DATA(messageData);
+                            receiveDATA(messageData);
                             break;
                         }
-                    //case 4: ACK
+                    case 4:
+                        if(isLoggedIn()) {
+                            ACKReceive();
+                            break;
+                        }
                     //case 5: ERROR
                     case 6:
                         if(isLoggedIn()) {
@@ -53,7 +67,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                             break;
                         }
                     case 7:
-                        if(isLoggedIn()) {
+                        if(!isLoggedIn()) {
                         LOGRQ(messageData);
                         break;
                     }
@@ -65,20 +79,20 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                     //case 9: BCAST
                     case 10:
                         if(isLoggedIn()) {
-                            shouldTerminate = false;
+                            UsersHolder.users.remove(connectionId);
+                            shouldTerminate = true;
+                            SendACK();
                             break;
                         }
                     default:
-                        byte[] error = {0,4};
-                        ERROR(error);
+                        ERROR(4);
                 }
     }
 
     private boolean isLoggedIn() {
-        boolean isLoggedIn = users.get(connectionId);
+        boolean isLoggedIn = UsersHolder.users.get(connectionId);
         if (!isLoggedIn) {
-            byte[] error = {0, 6};
-            ERROR(error);
+            ERROR(6);
             return false;
         }
         return true;
@@ -93,10 +107,9 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
             5    File already exists – File name exists on WRQ.
             6   User not logged in – Any opcode received before Login completes.
             7    User already logged in – Login username already connected.  */
-    private void ERROR(byte[] Error) {
-        short ErrorValue = (short) (((short) Error[0]) << 8 | (short) (Error[1]) & 0x00ff);
+    private void ERROR(int Error) {
         String msg="";
-        switch (ErrorValue) {
+        switch (Error) {
             case 0:
                 msg="Error 0";
                 break;
@@ -125,12 +138,12 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         connections.send(connectionId,BMsg);
     }
 
-    private void ACK() {
+    private void SendACK() {
             byte[] BMsg="ACK 0".getBytes();
             connections.send(connectionId,BMsg);
     }
 
-    private void ACK(short blockNumber) {
+    private void SendACK(short blockNumber) {
         byte[] ACK = "ACK".getBytes();
         byte first = (byte) (blockNumber & 0xFF); // Extracts the lower byte
         byte second = (byte) ((blockNumber >> 8) & 0xFF); // Shifts and extracts the higher byte
@@ -143,27 +156,125 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
 
     private void RRQ(byte[] messageData){
 
-
     }
 
     private void WRQ(byte[] messageData){
+        dataHolder = new LinkedList<>();
+        FileName = new String(messageData);
+        String filePath = PATH+FileName;
+        if(!(new File(filePath).exists()))
+            ERROR(1);
+        else {
+            SendACK();
+        }
+    }
+    private void receiveDATA(byte[] messageData) {
+        short packetSize = (short) (((short) messageData[0]) << 8 | (short) (messageData[1]) & 0x00ff);
+        byte[] BlockNumberMessage = new byte[messageData.length - 2];
+        System.arraycopy(messageData, 2, BlockNumberMessage, 0, messageData.length - 2);
 
+        short blockNumber = (short) (((short) BlockNumberMessage[0]) << 8 | (short) (BlockNumberMessage[1]) & 0x00ff);
+        byte[] data = new byte[BlockNumberMessage.length - 2];
+        System.arraycopy(BlockNumberMessage, 2, data, 0, BlockNumberMessage.length - 2);
+
+        dataHolder.addLast(data);
+        SendACK(blockNumber);
+
+        if(packetSize<512){
+            //create file
+            byte[] theFile = new byte[(blockNumber-1)*512+packetSize];
+            int i=0;
+            for(byte[] arrays:dataHolder) {
+                System.arraycopy(arrays, 0, theFile, i*512,arrays.length);
+                i++;
+            }
+            Path path = Paths.get(PATH+FileName);
+            try{
+                Files.write(path,theFile);
+                String msg = "WRQ "+FileName+" complete";
+                byte[] send = msg.getBytes();
+                connections.send(connectionId,send);
+
+            }catch (IOException e){
+
+            }
+
+        }
 
     }
-    private void DATA(byte[] messageData){
 
-
+    private void prepareDATA() {
+        int sizeOfDataHolder=0;
+        for (byte[] b:dataHolder){
+            sizeOfDataHolder+=b.length;
+        }
+        Byte[] theFileToSend = new Byte[sizeOfDataHolder];
+        int placeHere = 0;
+        for(byte[] arrays:dataHolder) {
+            System.arraycopy(arrays, 0, theFileToSend, placeHere,arrays.length);
+            placeHere+=arrays.length;
+        }
+        boolean stop = false;
+        short b = 1;
+        while(!stop) {
+            byte[] packet = new byte[sizeOfDataHolder + 6];
+            packet[0] = (byte) 0;
+            packet[1] = (byte) 3;
+            short a = (short) sizeOfDataHolder;
+            byte[] a_bytes = {(byte) (a >> 8), (byte) (a & 0xff)};
+            packet[2] = a_bytes[0];
+            packet[3] = a_bytes[1];
+            byte[] b_bytes = {(byte) (b >> 8), (byte) (b & 0xff)};
+            packet[4] = b_bytes[0];
+            packet[5] = b_bytes[1];
+            System.arraycopy(theFileToSend, 0, packet, 6, theFileToSend.length);
+            packetsToSend.add(packet);
+            b++;
+            if (sizeOfDataHolder < 512) {
+                stop = true;
+            } else {
+                Byte[] newFile = new Byte[theFileToSend.length - 512];
+                System.arraycopy(theFileToSend, 512, newFile, 0, newFile.length);
+                theFileToSend = newFile;
+            }
+        }
     }
 
-
-    private void DIRQ(byte[] messageData){
-
-
+    private void DIRQ(byte[] messageData) {
+        toSend="DIRQ complete";
+        dataHolder = new LinkedList<>();
+        String fileName = "";
+        File directory = new File(PATH);
+        File[] files = directory.listFiles();
+        byte[] zero = new byte[1];
+        zero[0] = (byte) 0;
+        for (File file : files) {
+            if (file.isFile()) {
+                fileName = file.getName();
+                dataHolder.addLast(fileName.getBytes());
+                dataHolder.addLast(zero);
+            }
+        }
+        dataHolder.removeLast();
+        packetsToSend.clear();
+        this.prepareDATA();
+        ACKReceive();
     }
 
+    private void ACKReceive() {
+        if(!packetsToSend.isEmpty())
+            connections.send(connectionId, packetsToSend.remove());
+        else {
+            connections.send(connectionId, toSend.getBytes());
+
+        }
+    }
+    private void opcodeCreator(int op){
+        byte[] opcode = {(byte)0,(byte)op};
+    }
     private void LOGRQ(byte[] messageData){
-
-
+        UsersHolder.users.put(connectionId,true);
+        SendACK();
     }
 
     private void DELRQ(byte[] messageData){
@@ -175,8 +286,8 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
     @Override
     public boolean shouldTerminate() {
        return shouldTerminate;
-    } 
+    }
 
 
-    
+
 }

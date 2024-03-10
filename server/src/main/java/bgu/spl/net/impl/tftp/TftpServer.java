@@ -19,9 +19,6 @@ public class TftpServer<T> extends BaseServer<T> {
 
     @Override
     protected void execute(BlockingConnectionHandler<T> handler) {
-        // mor's try:
         new Thread(handler).start();
-        //end mor's try
-        //TODO: Implement this
     }
 }
