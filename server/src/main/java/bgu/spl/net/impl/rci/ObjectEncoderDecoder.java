@@ -17,6 +17,11 @@ public class ObjectEncoderDecoder implements MessageEncoderDecoder<Serializable>
     private int objectBytesIndex = 0;
 
     @Override
+    public void End() {
+
+    }
+
+    @Override
     public Serializable decodeNextByte(byte nextByte) {
         if (objectBytes == null) { //indicates that we are still reading the length
             lengthBuffer.put(nextByte);
@@ -63,7 +68,7 @@ public class ObjectEncoderDecoder implements MessageEncoderDecoder<Serializable>
             }
 
             ObjectOutput out = new ObjectOutputStream(bytes);
-            out.writeObject(message);
+            out.writeObj.0 ect(message);
             out.flush();
             byte[] result = bytes.toByteArray();
 

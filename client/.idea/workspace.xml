@@ -5,7 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="aafeab24-b06d-4a20-b35f-44a3a23cfb66" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/rci/ObjectEncoderDecoder.java" beforeDir="false" afterPath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/rci/ObjectEncoderDecoder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpProtocol.java" beforeDir="false" afterPath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpProtocol.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -15,9 +17,16 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 7
-}]]></component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="useMavenConfig" value="true" />
+      </MavenGeneralSettings>
+    </option>
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
+}</component>
   <component name="ProjectId" id="2dKFgHVwSiQxO3ORTAigeuvEAlf" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
@@ -27,9 +36,9 @@
   "keyToString": {
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "master",
+    "git-widget-placeholder": "mor's__branch",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/uni/C/spl/HW3/Skeleton/Skeleton/server",
+    "last_opened_file_path": "G:/האחסון שלי/סמסטר ג'/תכנות מערכות/עבודה 2/set_cards_game - ron hadad/HW3_SPL/client",
     "nodejs_package_manager_path": "npm",
     "vue.rearranger.settings.migration": "true"
   }

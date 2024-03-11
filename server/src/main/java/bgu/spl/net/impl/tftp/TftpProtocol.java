@@ -31,14 +31,11 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         this.connections=connections;
         UsersHolder.users.put(connectionId,false);
     }
-
     @Override
     public void process(byte[] message) {//tomer and mor created
         short opcode = (short) (((short) message[0]) << 8 | (short) (message[1]) & 0x00ff);
-
         byte[] messageData = new byte[message.length - 2];
         System.arraycopy(message, 2, messageData, 0, message.length - 2);
-
                 switch (opcode) {
                     case 1:
                         if(isLoggedIn()) {
@@ -88,7 +85,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
                         ERROR(4);
                 }
     }
-
     private boolean isLoggedIn() {
         boolean isLoggedIn = UsersHolder.users.get(connectionId);
         if (!isLoggedIn) {
@@ -97,7 +93,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         }
         return true;
     }
-
 /*    error Value Meaning:
             0    Not defined, see error message (if any).
             1    File not found – RRQ DELRQ of non-existing file.
@@ -105,7 +100,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
             3    Disk full or allocation exceeded – No room in disk.
             4    Illegal TFTP operation – Unknown Opcode.
             5    File already exists – File name exists on WRQ.
-            6   User not logged in – Any opcode received before Login completes.
+            6    User not logged in – Any opcode received before Login completes.
             7    User already logged in – Login username already connected.  */
     private void ERROR(int Error) {
         String msg="";
@@ -137,12 +132,10 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         byte[] BMsg=msg.getBytes();
         connections.send(connectionId,BMsg);
     }
-
     private void SendACK() {
             byte[] BMsg="ACK 0".getBytes();
             connections.send(connectionId,BMsg);
     }
-
     private void SendACK(short blockNumber) {
         byte[] ACK = "ACK".getBytes();
         byte first = (byte) (blockNumber & 0xFF); // Extracts the lower byte
@@ -153,11 +146,29 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         System.arraycopy(BMsg, 0, send, ACK.length, BMsg.length);
         connections.send(connectionId,send);
     }
-
-    private void RRQ(byte[] messageData){
-
+    private void RRQ(byte[] messageData) {
+        byte[] fileName = new byte[messageData.length-1];
+        for (int i = 0; i < messageData.length-1; i++) {
+            fileName[i]=messageData[i];
+        }
+        dataHolder = new LinkedList<>();
+        FileName = new String(fileName);
+        Path filePath = Paths.get(PATH + FileName);
+        if(Files.exists(filePath)) {
+            SendACK();
+            byte[] fileContent = new byte[0];
+            try {fileContent = Files.readAllBytes(filePath);}
+            catch (IOException e) {}
+            dataHolder.clear();
+            dataHolder.add(fileContent);
+            packetsToSend.clear();
+            this.prepareDATA();
+            ACKReceive();
+        }
+        else {
+            ERROR(1);
+        }
     }
-
     private void WRQ(byte[] messageData){
         dataHolder = new LinkedList<>();
         FileName = new String(messageData);
@@ -202,7 +213,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         }
 
     }
-
     private void prepareDATA() {
         int sizeOfDataHolder=0;
         for (byte[] b:dataHolder){
@@ -239,7 +249,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
             }
         }
     }
-
     private void DIRQ(byte[] messageData) {
         toSend="DIRQ complete";
         dataHolder = new LinkedList<>();
@@ -260,7 +269,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         this.prepareDATA();
         ACKReceive();
     }
-
     private void ACKReceive() {
         if(!packetsToSend.isEmpty())
             connections.send(connectionId, packetsToSend.remove());
@@ -276,18 +284,12 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]>  {
         UsersHolder.users.put(connectionId,true);
         SendACK();
     }
-
     private void DELRQ(byte[] messageData){
 
 
     }
-
-
     @Override
     public boolean shouldTerminate() {
        return shouldTerminate;
     }
-
-
-
 }
