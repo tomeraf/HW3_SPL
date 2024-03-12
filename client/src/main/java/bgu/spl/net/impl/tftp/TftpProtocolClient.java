@@ -77,13 +77,10 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
                 break;
             //case 5: ERROR
             case 6:
-                return DIRQ(messageData);
                 break;
             case 7:
-                return LOGRQ(messageData);
                 break;
             case 8:
-                return DELRQ(messageData);
                 break;
             //case 9: BCAST
             case 10:
