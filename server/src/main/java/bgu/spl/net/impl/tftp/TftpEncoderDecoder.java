@@ -31,12 +31,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
     }
 
     public byte[] encode(byte[] message) {
-        byte[] ans = new byte[message.length+1];
-        for(int i = 0; i<ans.length; i++){
-            ans[i]=message[i];
-        }
-        ans[ans.length-1] = 0;
-        return ans;
+        return message;
     }
 
 }

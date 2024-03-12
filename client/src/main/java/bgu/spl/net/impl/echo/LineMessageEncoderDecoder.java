@@ -21,6 +21,7 @@ public class LineMessageEncoderDecoder implements MessageEncoderDecoder<String> 
         return null; //not a line yet
     }
 
+    public void End(){}
     @Override
     public byte[] encode(String message) {
         return (message + "\n").getBytes(); //uses utf8 by default

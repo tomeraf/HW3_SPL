@@ -24,7 +24,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     private LinkedList<byte[]> dataHolder;
     private String FileName;
     private Queue<byte[]> packetsToSend;
-    private String toSend;
 
     @Override
     public void start(int connectionId, Connections<byte[]> connections) {
@@ -271,7 +270,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             Error(5);
             return;
         }
-        toSend = "DIRQ complete";
         dataHolder = new LinkedList<>();
         String fileName = "";
         File directory = new File(PATH);
@@ -294,10 +292,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     private void ACKReceive() {
         if (!packetsToSend.isEmpty())
             connections.send(connectionId, packetsToSend.remove());
-        else {
-            connections.send(connectionId, toSend.getBytes());
-
-        }
     }
 
     private void LOGRQ(byte[] messageData) {
