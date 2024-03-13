@@ -19,7 +19,4 @@ public interface MessageEncoderDecoder<T> {
      */
     byte[] encode(T message);
 
-
-    void End();
-
 }
