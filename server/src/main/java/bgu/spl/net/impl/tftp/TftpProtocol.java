@@ -144,9 +144,8 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     }
 
     private void RRQ(byte[] messageData) {
-        byte[] fileName = this.removeZeroFromEnd(messageData);
         dataHolder = new LinkedList<>();
-        FileName = new String(fileName);
+        FileName = new String(messageData);
         Path filePath = Paths.get(PATH + FileName);
         if (Files.exists(filePath)) {
             if (!isLoggedIn()) {
@@ -172,9 +171,8 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     }
 
     private void WRQ(byte[] messageData) {
-        byte[] fileName = removeZeroFromEnd(messageData);
         dataHolder = new LinkedList<>();
-        FileName = new String(fileName);
+        FileName = new String(messageData);
         Path filePath = Paths.get(PATH + FileName);
         if (Files.exists(filePath))
             Error(5);
@@ -306,9 +304,8 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     }
 
     private void DELRQ(byte[] messageData) {
-        byte[] fileName = removeZeroFromEnd(messageData);
         dataHolder = new LinkedList<>();
-        FileName = new String(fileName);
+        FileName = new String(messageData);
         Path filePath = Paths.get(PATH + FileName);
         if (Files.exists(filePath)) {
             if (!isLoggedIn()) {
@@ -318,7 +315,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             try {
                 Files.delete(filePath);
                 this.SendACK();
-                this.BCAST((byte) 0, fileName);
+                this.BCAST((byte) 0, messageData);
             } catch (IOException e) {
             }
         } else {
@@ -344,13 +341,13 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         return shouldTerminate;
     }
 
-    private byte[] removeZeroFromEnd(byte[] messageData) {
-        byte[] fileName = new byte[messageData.length - 1];
-        for (int i = 0; i < messageData.length - 1; i++) {
-            fileName[i] = messageData[i];
-        }
-        return fileName;
-
-
-    }
+//    private byte[] removeZeroFromEnd(byte[] messageData) {
+//        byte[] fileName = new byte[messageData.length - 1];
+//        for (int i = 0; i < messageData.length - 1; i++) {
+//            fileName[i] = messageData[i];
+//        }
+//        return fileName;
+//
+//
+//    }
 }

@@ -31,7 +31,9 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
     }
 
     public byte[] decodeNextByte(byte nextByte) {
-        if(waitForZero){                        //we have been through the opcode and size is not known
+        // we have been through the opcode and size is not known.
+        // in this case we wait for a zero in the end.
+        if(waitForZero){
             b.add(nextByte);
             if(nextByte==(byte)0){
                 byte[] ans = new byte[b.size()];
@@ -44,7 +46,8 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
                 return null;
             }
         }
-        if (sizeKnown){                 //size allready known now iterate untill size left to decode is 0
+        // size already known now iterate until size left to decode is 0.
+        if (sizeKnown){
             b.add(nextByte);
             sizeLeftToDecode--;
             if (sizeLeftToDecode==0){
@@ -57,11 +60,15 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
             }
             return null;
         }
-        if (!gotTheFirst){              //probably the first iteration will come in here
+        // the first iteration will come in here.
+        if (!gotTheFirst){
             b.add(nextByte);
             gotTheFirst = true;
             return null;
-        } else if (!gotTheSecond) {     //second iteration go here
+        }
+        // second iteration go here, opcode will be checked.
+        // we will find what is the opcode and act accordingly.
+        else if (!gotTheSecond) {
             b.add(nextByte);
             gotTheSecond = true;
             opCode = nextByte;
@@ -72,14 +79,18 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
                 reset();
                 return (new byte[]{(byte) 0, 0x0a});
             }
-        } else if (!gotTheThird) {     // third iteration go here , in case of BCAST wait for zero -> true
+        }
+        // third iteration go here , in case of BCAST wait for zero -> true
+        else if (!gotTheThird) {
             b.add(nextByte);
             theThird = nextByte;
             gotTheThird=true;
             if (opCode == (byte)9)      //BCAST
                 waitForZero = true;
             return null;
-        } else if (!gotTheForth) {
+        }
+        // forth iteration will go here.
+        else if (!gotTheForth) {
             gotTheForth=true;
             b.add(nextByte);
             theForth = nextByte;

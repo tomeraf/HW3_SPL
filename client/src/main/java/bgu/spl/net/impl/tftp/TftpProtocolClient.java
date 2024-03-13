@@ -17,6 +17,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
     private static LinkedList<byte[]> dataHolder;
     private static boolean shouldTerminate = false;
     private String FileName;
+    private boolean nextTimeShouldTerminate=false;
 
     //final  private String PATH =  "server/Flies/";
 
@@ -63,30 +64,24 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         byte[] messageData = new byte[message.length - 2];
         System.arraycopy(message, 2, messageData, 0, message.length - 2);
         switch (opcode) {
-            case 1://RRQ
-                break;
-            case 2://WRQ
-                break;
+//            case 1://RRQ
+//            case 2://WRQ
             case 3://DATA
                 return receiveDATA(messageData);
             case 4://ACK
                 return ACKReceive(messageData);
-            //case 5: ERROR
-            case 6://DIRQ
-                break;
-            case 7://LOGRQ
-                break;
-            case 8://DELRQ
-                break;
+//            case 5: ERROR
+//            case 6://DIRQ
+//            case 7://LOGRQ
+//            case 8://DELRQ
             case 9:
-                BCAST(messageData);
-                break;
-            case 10:
-                break;
+                return BCAST(messageData);
+//            case 10://disc
         }
         return null;
     }
-    private void BCAST(byte[] messageData) {
+    private byte[] BCAST(byte[] messageData) {
+
         byte[] filenameInBytes = new byte[messageData.length-1];
         System.arraycopy(messageData,0,filenameInBytes,0,filenameInBytes.length);
         String filename = new String(filenameInBytes, StandardCharsets.UTF_8); // Convert byte array to String
@@ -95,6 +90,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         } else {
             toPrint("BCAST add" + filename);
         }
+        return new byte[]{(byte) 0};
     }
     // client keyboard operated commands
     /**
@@ -228,6 +224,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      */
     private byte[] DISC(){
         byte[] packet = {(byte)0,(byte)0x0a};
+        nextTimeShouldTerminate=true;
         return packet;
     }
 
@@ -249,6 +246,9 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         }
         if (!packetsToSend.isEmpty()){
             return packetsToSend.removeFirst();
+        }
+        if (nextTimeShouldTerminate){
+            shouldTerminate=true;
         }
         return null;
     }

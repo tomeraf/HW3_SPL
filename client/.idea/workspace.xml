@@ -4,7 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aafeab24-b06d-4a20-b35f-44a3a23cfb66" name="Changes" comment="decode changed" />
+    <list default="true" id="aafeab24-b06d-4a20-b35f-44a3a23cfb66" name="Changes" comment="decode changed">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpEncoderDecoder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpEncoderDecoder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpProtocolClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpProtocolClient.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/api/MessageEncoderDecoder.java" beforeDir="false" afterPath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/api/MessageEncoderDecoder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpEncoderDecoder.java" beforeDir="false" afterPath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpEncoderDecoder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpProtocol.java" beforeDir="false" afterPath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpProtocol.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/srv/BlockingConnectionHandler.java" beforeDir="false" afterPath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/srv/BlockingConnectionHandler.java" afterDir="false" />
+    </list>
     <list id="3d02c2ab-e723-44c4-ac47-c1f932e73eee" name="Changes by Moraz" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

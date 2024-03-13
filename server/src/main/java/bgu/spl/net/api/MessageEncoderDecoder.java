@@ -3,7 +3,6 @@ package bgu.spl.net.api;
 import java.io.UnsupportedEncodingException;
 
 public interface MessageEncoderDecoder<T> {
-    void End();
     /**
      * add the next byte to the decoding process
      *
