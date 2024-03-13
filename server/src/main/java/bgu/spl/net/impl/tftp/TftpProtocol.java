@@ -23,13 +23,14 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     private Connections<byte[]> connections;
     private LinkedList<byte[]> dataHolder;
     private String FileName;
-    private Queue<byte[]> packetsToSend;
+    private LinkedList<byte[]> packetsToSend;
 
     @Override
     public void start(int connectionId, Connections<byte[]> connections) {
         this.connectionId = connectionId;
         this.connections = connections;
         UsersHolder.users.put(connectionId, false);
+        this.packetsToSend = new LinkedList<>();
     }
 
     @Override
@@ -253,7 +254,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             packet[4] = packetNumberInBytes[0];
             packet[5] = packetNumberInBytes[1];
             System.arraycopy(theFileToSend, (packetNumber - 1) * 512, packet, 6, currentPacketSize - 6);
-            packetsToSend.add(packet);
+            packetsToSend.addLast(packet);
             packetNumber++;
             if (sizeOfDataToSend < 512) {
                 stop = true;
@@ -291,7 +292,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
 
     private void ACKReceive() {
         if (!packetsToSend.isEmpty())
-            connections.send(connectionId, packetsToSend.remove());
+            connections.send(connectionId, packetsToSend.removeFirst());
     }
 
     private void LOGRQ(byte[] messageData) {

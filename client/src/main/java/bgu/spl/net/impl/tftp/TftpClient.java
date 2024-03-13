@@ -46,6 +46,8 @@ public class TftpClient {
                 encdec.End();
                 byte[] nextMessage = encdec.decodeNextByte((byte) 0);
                 processedAnswer=protocol.processServer(nextMessage);
+                if(processedAnswer == null)
+                    command = true;
 
             }
         } catch (IOException ex) {

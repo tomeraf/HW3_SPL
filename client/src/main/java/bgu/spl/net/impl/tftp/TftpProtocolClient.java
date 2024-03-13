@@ -5,20 +5,18 @@ package bgu.spl.net.impl.tftp;
 import bgu.spl.net.api.MessagingProtocol;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
 public class TftpProtocolClient implements MessagingProtocol<byte[]> {
-    private static Queue<byte[]> packetsToSend;
-    private static String toSend;
-    private static String FileName;
+    final private String PATH = "client/";
+    private static LinkedList<byte[]> packetsToSend;
     private static LinkedList<byte[]> dataHolder;
     private static boolean shouldTerminate = false;
-    private static BufferedReader in;
-    private static BufferedWriter out;
-
+    private String FileName;
 
     //final  private String PATH =  "server/Flies/";
 
@@ -29,7 +27,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      * @param msg the string received from the user's terminal.
      */
     public byte[] process(byte[] msg){
-        String message = msg.toString();
+        String message = new String(msg, StandardCharsets.UTF_8); // Convert byte array to String
         char[] toOPCode ={message.charAt(0),message.charAt(1),message.charAt(2)};
         switch (toOPCode[0]) {
             case 'R'://RRQ
@@ -64,33 +62,40 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         short opcode = (short) (((short) message[0]) << 8 | (short) (message[1]) & 0x00ff);
         byte[] messageData = new byte[message.length - 2];
         System.arraycopy(message, 2, messageData, 0, message.length - 2);
-        switch (messageData) {
-            case 1:
+        switch (opcode) {
+            case 1://RRQ
                 break;
-            case 2:
+            case 2://WRQ
                 break;
-            case 3:
+            case 3://DATA
                 return receiveDATA(messageData);
-                break;
-            case 4:
-                return ACKReceive();
-                break;
+            case 4://ACK
+                return ACKReceive(messageData);
             //case 5: ERROR
-            case 6:
+            case 6://DIRQ
                 break;
-            case 7:
+            case 7://LOGRQ
                 break;
-            case 8:
+            case 8://DELRQ
                 break;
-            //case 9: BCAST
+            case 9:
+                BCAST(messageData);
+                break;
             case 10:
                 break;
-            case 11:
-                toPrint(messageData);
-                break;
+        }
+        return null;
+    }
+    private void BCAST(byte[] messageData) {
+        byte[] filenameInBytes = new byte[messageData.length-1];
+        System.arraycopy(messageData,0,filenameInBytes,0,filenameInBytes.length);
+        String filename = new String(filenameInBytes, StandardCharsets.UTF_8); // Convert byte array to String
+        if (messageData[0]==(byte)0){
+            toPrint("BCAST delete" + filename);
+        } else {
+            toPrint("BCAST add" + filename);
         }
     }
-
     // client keyboard operated commands
     /**
      * 2.1.1 LOGRQ
@@ -143,7 +148,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      */
     private byte[] WRQ(String Command){
         String filename = Command.substring(4);
-        Path path = Paths.get("client" + filename) ;
+        Path path = Paths.get(PATH + filename) ;
         if (!Files.exists(path)){
             System.out.println("file does not exists");
             return null;
@@ -154,6 +159,11 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         packet[1] = (byte) 2;
         System.arraycopy(usernameInBytes,4,packet,2,usernameInBytes.length-4);
         packet[Command.length()+2] = (byte) 0;
+        dataHolder.clear();
+        try {
+            dataHolder.add(Files.readAllBytes(path));
+        } catch (IOException e) {}
+        prepareDATA();
         return packet;
     }
     /**
@@ -172,7 +182,8 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      */
     private byte[] RRQ(String Command){
         String filename = Command.substring(4);
-        Path path = Paths.get("client" + filename) ;
+        this.FileName = filename;
+        Path path = Paths.get(PATH + filename) ;
         if (Files.exists(path)){
             System.out.println("file already exists");
             return null;
@@ -232,22 +243,88 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         byte[] packet = {(byte)0,(byte)4,first,second};
         return packet;
     }
-    private byte[] ACKReceive() {
-        toPrint("ACK 0");
+    private byte[] ACKReceive(byte[] messageData) {
+        if (messageData[1]==(byte)0){
+            toPrint("ACK 0");
+        }
+        if (!packetsToSend.isEmpty()){
+            return packetsToSend.removeFirst();
+        }
         return null;
     }
     private byte[] receiveDATA(byte[] Command){
+        dataHolder= new LinkedList<>();
+        //removes the first two bytes into the short packetSize
+        short packetSize = (short) (((short) Command[0]) << 8 | (short) (Command[1]) & 0x00ff);
+        byte[] BlockNumberMessage = new byte[Command.length - 2];
+        System.arraycopy(Command, 2, BlockNumberMessage, 0, Command.length - 2);
+        //removes the third and forth bytes into the short blockNumber
+        short blockNumber = (short) (((short) BlockNumberMessage[0]) << 8 | (short) (BlockNumberMessage[1]) & 0x00ff);
+        byte[] data = new byte[BlockNumberMessage.length - 2];
+        System.arraycopy(BlockNumberMessage, 2, data, 0, BlockNumberMessage.length - 2);
+        // the array data contains only the data section
+        dataHolder.addLast(data);
+        if (packetSize < 512) {
+            //create file
+            byte[] theFile = new byte[(blockNumber - 1) * 512 + packetSize];
+            int i = 0;
+            for (byte[] arrays : dataHolder) {
+                System.arraycopy(arrays, 0, theFile, i * 512, arrays.length);
+                i++;
+            }
+            Path path = Paths.get(PATH + FileName);
+            try {
+
+                Path filePath = Paths.get(PATH + FileName);
+                Files.write(path, theFile);
+            } catch (IOException e) {
+            }
+        }
+        return SendACK(blockNumber);
 
     }
-    private byte[] prepareDATA(){
+    private void prepareDATA(){
+        packetsToSend = new LinkedList<>();
+        int sizeOfDataToSend = 0;
+        for (byte[] b : dataHolder) {
+            sizeOfDataToSend += b.length;
+        }
+        Byte[] theFileToSend = new Byte[sizeOfDataToSend];
+        int placeHere = 0;
+        for (byte[] arrays : dataHolder) {
+            System.arraycopy(arrays, 0, theFileToSend, placeHere, arrays.length);
+            placeHere += arrays.length;
+        }
+        boolean stop = false;
+        short packetNumber = 1;
+        int currentPacketSize = Math.min(sizeOfDataToSend + 6, 512 + 6);
+        while (!stop) {
+            byte[] packet = new byte[currentPacketSize];
+            packet[0] = (byte) 0;
+            packet[1] = (byte) 3;
+            short dataSegmentSize = (short) (currentPacketSize - 6);
+            byte[] dataSegmentSizeInBytes = {(byte) (dataSegmentSize >> 8), (byte) (dataSegmentSize & 0xff)};
+            packet[2] = dataSegmentSizeInBytes[0];
+            packet[3] = dataSegmentSizeInBytes[1];
+            byte[] packetNumberInBytes = {(byte) (packetNumber >> 8), (byte) (packetNumber & 0xff)};
+            packet[4] = packetNumberInBytes[0];
+            packet[5] = packetNumberInBytes[1];
+            System.arraycopy(theFileToSend, (packetNumber - 1) * 512, packet, 6, currentPacketSize - 6);
+            packetsToSend.addLast(packet);
+            packetNumber++;
+            if (currentPacketSize < 512) {
+                stop = true;
+            } else {
+                Byte[] newFile = new Byte[theFileToSend.length - 512];
+                System.arraycopy(theFileToSend, 512, newFile, 0, newFile.length);
+                theFileToSend = newFile;
+            }
+        }
     }
-
-
     private void toPrint(String toPrint) {
         System.out.println(toPrint);
     }
     public boolean shouldTerminate() {
         return shouldTerminate;
     }
-
 }
