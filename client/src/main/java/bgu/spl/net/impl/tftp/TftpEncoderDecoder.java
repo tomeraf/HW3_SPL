@@ -13,7 +13,6 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
     private boolean gotTheSecond;
     private boolean sizeKnown;
     private short sizeLeftToDecode;
-    public boolean isEnd=false;
     public boolean gotTheThird;
     private byte theThird;
     public boolean gotTheForth;
@@ -108,10 +107,6 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
         this.gotTheThird = false;
         this.gotTheForth = false;
         this.waitForZero=false;
-    }
-
-    public void End() {
-        isEnd=true;
     }
 
     public byte[] encode(byte[] message) {

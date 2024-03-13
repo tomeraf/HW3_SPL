@@ -41,10 +41,8 @@ public class TftpClient {
 
                 int read;
                 while (!protocol.shouldTerminate() && (read = in.read()) >= 0) {
-                    encdec.decodeNextByte((byte) read);
+                    byte[] nextMessage=encdec.decodeNextByte((byte) read);
                 }
-                encdec.End();
-                byte[] nextMessage = encdec.decodeNextByte((byte) 0);
                 processedAnswer=protocol.processServer(nextMessage);
                 if(processedAnswer == null)
                     command = true;
