@@ -9,10 +9,6 @@ public class LineMessageEncoderDecoder implements MessageEncoderDecoder<String> 
     private byte[] bytes = new byte[1 << 10]; //start with 1k
     private int len = 0;
 
-    @Override
-    public void End() {
-
-    }
 
     @Override
     public String decodeNextByte(byte nextByte) {
