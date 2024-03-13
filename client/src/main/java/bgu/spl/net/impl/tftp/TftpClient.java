@@ -40,7 +40,7 @@ public class TftpClient {
                 out.flush();
 
                 int read;
-                while (!protocol.shouldTerminate() && (read = in.read()) >= 0) {
+                while ((read = in.read()) >= 0) {
                     byte[] nextMessage=encdec.decodeNextByte((byte) read);
                 }
                 processedAnswer=protocol.processServer(nextMessage);
