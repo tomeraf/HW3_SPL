@@ -11,7 +11,12 @@ import java.nio.file.Paths;
 import java.util.*;
 
 class UsersHolder{
-    public static Map<Integer,Boolean> users=new HashMap<>(); ;
+    public static Map<Integer,Boolean> users=new HashMap<>();
+    public static Map<Integer,Boolean> getUsers(){
+        if (users == null)
+             users=new HashMap<>();
+        return users;
+    }
 
 
 }
@@ -29,7 +34,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     public void start(int connectionId, Connections<byte[]> connections) {
         this.connectionId = connectionId;
         this.connections = connections;
-        UsersHolder.users.put(connectionId, false);
+        UsersHolder.getUsers().put(connectionId, false);
         this.packetsToSend = new LinkedList<>();
     }
 
@@ -64,7 +69,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             //case 9: BCAST
             case 10:
                 if (isLoggedIn()) {
-                    UsersHolder.users.remove(connectionId);
+                    UsersHolder.getUsers().remove(connectionId);
                     shouldTerminate = true;
                     SendACK();
                     break;
@@ -77,9 +82,8 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     }
 
     private boolean isLoggedIn() {
-        boolean isLoggedIn = UsersHolder.users.get(connectionId);
+        boolean isLoggedIn = UsersHolder.getUsers().get(connectionId);
         if (!isLoggedIn) {
-            Error(6);
             return false;
         }
         return true;
@@ -96,39 +100,39 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
                 7    User already logged in – Login username already connected.  */
 
     private void Error(int Error) {
-        String msg = "";
-        switch (Error) {
-            case 0:
-                msg = "Error 0";
-                break;
-            case 1:
-                msg = "Error 1";
-                break;
-            case 2:
-                msg = "Error 2";
-                break;
-            case 3:
-                msg = "Error 3";
-                break;
-            case 4:
-                msg = "Error 4";
-                break;
-            case 5:
-                msg = "Error 5";
-                break;
-            case 6:
-                msg = "Error 6";
-                break;
-            case 7:
-                msg = "Error 7";
-        }
+//        String msg = "";
+//        switch (Error) {
+//            case 0:
+//                msg = "Error 0";
+//                break;
+//            case 1:
+//                msg = "Error 1";
+//                break;
+//            case 2:
+//                msg = "Error 2";
+//                break;
+//            case 3:
+//                msg = "Error 3";
+//                break;
+//            case 4:
+//                msg = "Error 4";
+//                break;
+//            case 5:
+//                msg = "Error 5";
+//                break;
+//            case 6:
+//                msg = "Error 6";
+//                break;
+//            case 7:
+//                msg = "Error 7";
+//        }
 
-        byte[] BMsg = msg.getBytes();
+        byte[] BMsg = {(byte)0,(byte)5,(byte)0,(byte)Error,(byte)0};
         connections.send(connectionId, BMsg);
     }
 
     private void SendACK() {
-        byte[] BMsg = "ACK 0".getBytes();
+        byte[] BMsg = {(byte)0,(byte)4,(byte)0,(byte)0};
         connections.send(connectionId, BMsg);
     }
 
@@ -299,7 +303,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             return;
         }
 
-        UsersHolder.users.put(connectionId, true);
+        UsersHolder.getUsers().put(connectionId, true);
         SendACK();
     }
 
@@ -330,8 +334,8 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         packet[2] = addedOrDeleted;
         System.arraycopy(filename, 0, packet, 3, filename.length);
         packet[packet.length - 1] = (byte) 0;
-        for (int connectionID : UsersHolder.users.keySet()) {
-            if (UsersHolder.users.get(connectionID)) {
+        for (int connectionID : UsersHolder.getUsers().keySet()) {
+            if (UsersHolder.getUsers().get(connectionID)) {
                 connections.send(connectionID, packet);
             }
         }

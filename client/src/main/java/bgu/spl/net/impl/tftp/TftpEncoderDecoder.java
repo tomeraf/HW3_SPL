@@ -76,8 +76,9 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
                 reset();
                 return (new byte[]{(byte) 0, (byte) 6});
             } else if (opCode == 0x0a) {                //DISC
+                byte [] ans =(new byte[]{(byte) 0, 0x0a});
                 reset();
-                return (new byte[]{(byte) 0, 0x0a});
+                return ans;
             }
         }
         // third iteration go here , in case of BCAST wait for zero -> true
@@ -95,8 +96,9 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
             b.add(nextByte);
             theForth = nextByte;
             if (opCode==(byte)4){           //ACK
+                byte [] ans =(new byte[] {(byte)0,opCode,theThird,theForth});
                 reset();
-                return (new byte[] {(byte)0,opCode,theThird,theForth});
+                return ans;
             } else if (opCode==(byte)3){        //DATA
                 sizeKnown = true;
                 sizeLeftToDecode = (short) (((short) theThird) << 8 | (short) (theForth) & 0x00ff);

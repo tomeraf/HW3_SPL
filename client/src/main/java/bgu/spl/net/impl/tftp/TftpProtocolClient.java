@@ -13,8 +13,8 @@ import java.util.*;
 
 public class TftpProtocolClient implements MessagingProtocol<byte[]> {
     final private String PATH = "client/";
-    private static LinkedList<byte[]> packetsToSend;
-    private static LinkedList<byte[]> dataHolder;
+    private static LinkedList<byte[]> packetsToSend = new LinkedList<>();
+    private static LinkedList<byte[]> dataHolder= new LinkedList<>();
     private static boolean shouldTerminate = false;
     private String FileName;
     private boolean nextTimeShouldTerminate=false;
@@ -50,8 +50,10 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
                 }
             case 'L'://LOGRQ
                 return LOGRQ(message);
+            default:
+                toPrint("Error 4");
+                return null;
         }
-        return null;
     }
     /** server input handler
      * this function receives the server packets and determines what is the
@@ -70,7 +72,8 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
                 return receiveDATA(messageData);
             case 4://ACK
                 return ACKReceive(messageData);
-//            case 5: ERROR
+            case 5:
+                return ERROR(messageData);
 //            case 6://DIRQ
 //            case 7://LOGRQ
 //            case 8://DELRQ
@@ -80,6 +83,12 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         }
         return null;
     }
+
+    private byte[] ERROR(byte[] messageData) {
+        toPrint("Error " + messageData[1]);
+        return null;
+    }
+
     private byte[] BCAST(byte[] messageData) {
 
         byte[] filenameInBytes = new byte[messageData.length-1];

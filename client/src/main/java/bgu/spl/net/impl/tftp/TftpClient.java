@@ -10,27 +10,30 @@ import java.util.Scanner;
 
 public class TftpClient {
     public static void main(String[] args) throws IOException {
+        args = new String[2];
         TftpEncoderDecoder encdecKeyBoard = new TftpEncoderDecoder();
         TftpProtocolClient protocolKeyBoard = new TftpProtocolClient();
         TftpEncoderDecoder encdecServer = new TftpEncoderDecoder();
         TftpProtocolClient protocolServer = new TftpProtocolClient();
 
-        if (args.length == 0) {
-            args = new String[]{"localhost", "hello"};
-        }
-        
-        try (Socket sock = new Socket(args[0], 7777)) {
+
+        try (Socket sock = new Socket("localhost", 7777)) {
             BufferedInputStream in = new BufferedInputStream(sock.getInputStream());
             BufferedOutputStream out = new BufferedOutputStream(sock.getOutputStream());
             KeyBoardListener KeyBoard = new KeyBoardListener(encdecKeyBoard,protocolKeyBoard,out);
             Thread KeyBoardThread = new Thread(KeyBoard);
             ServerListener Server = new ServerListener(encdecServer,protocolServer,in,out,KeyBoard);
             Thread ServerThread = new Thread(Server);
+            System.out.println("Starting Threads:");
             KeyBoardThread.start();
             ServerThread.start();
+            KeyBoardThread.join();
+            ServerThread.join();
+
         } catch (IOException ex) {
             ex.printStackTrace();
         }
+        catch (InterruptedException x){}
     }
 }
 class KeyBoardListener implements Runnable {
@@ -52,16 +55,19 @@ class KeyBoardListener implements Runnable {
             String commandS = scanner.nextLine();
             byte[] send = null;
             send = (byte[]) protocol.process(commandS.getBytes());
-
-            try {
-                synchronized (out) {
-                    out.write((encdec.encode(send)), 0, send.length);
-                    out.flush();
+            if (send != null) {
+                try {
+                    synchronized (out) {
+                        out.write((encdec.encode(send)), 0, send.length);
+                        out.flush();
+                    }
+                } catch (IOException ex) {
+                    ex.printStackTrace();
                 }
-            } catch (IOException ex) {
-                ex.printStackTrace();
+                synchronized (this) {
+                    wait();
+                }
             }
-                wait();
             } catch (InterruptedException ignore) {}
         }
     }
@@ -91,20 +97,26 @@ class ServerListener implements Runnable {
             int read;
             byte[] nextMessage = null;
             byte[] processedAnswer = null;
+
             try{
-                while ((read = in.read()) >= 0) {
+                while ((read = in.read()) >= 0 && nextMessage==null) {
                     nextMessage = encdec.decodeNextByte((byte) read);
+                    if(nextMessage!=null)
+                        processedAnswer = protocol.processServer(nextMessage);
                 }
-            }catch (IOException e){
-                throw new RuntimeException(e);
+            } catch (IOException e){
+                e.printStackTrace();
+                throw new RuntimeException();
             }
-            processedAnswer = protocol.processServer(nextMessage);
+
             if (processedAnswer == null) {
                 if (protocol.shouldTerminate()) {
                     KeyBoard.Terminate();
                     this.Terminate();
                 }
-                KeyBoard.notifyAll();
+                synchronized (KeyBoard) {
+                    KeyBoard.notifyAll();
+                }
             }
             else if (processedAnswer.length != 1) {
                 try {
@@ -113,7 +125,7 @@ class ServerListener implements Runnable {
                         out.flush();
                     }
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    e.printStackTrace();
                 }
             }
         }

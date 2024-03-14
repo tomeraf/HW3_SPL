@@ -34,11 +34,12 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
     public byte[] decodeNextByte(byte nextByte) {
         // we have been through the opcode and size is not known.
         // in this case we wait for a zero in the end.
-        if(waitForZero){
+        if(waitForZero){                                //LOGRQ,WRQ,RRQ,ERROR
             b.add(nextByte);
             if(nextByte==(byte)0){
-                byte[] ans = new byte[b.size()];
-                for (int i = 0; i < b.size(); i++) {
+                int size = b.size();
+                byte[] ans = new byte[size];
+                for (int i = 0; i < size; i++) {
                     ans[i]=b.remove(0);
                 }
                 reset();
@@ -96,8 +97,9 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
             b.add(nextByte);
             theForth = nextByte;
             if (opCode==(byte)4){           //ACK
+                byte [] ans =(new byte[] {(byte)0,opCode,theThird,theForth});
                 reset();
-                return (new byte[] {(byte)0,opCode,theThird,theForth});
+                return ans;
             } else if (opCode==(byte)3){        //DATA
                 sizeKnown = true;
                 sizeLeftToDecode = (short) (((short) theThird) << 8 | (short) (theForth) & 0x00ff);
