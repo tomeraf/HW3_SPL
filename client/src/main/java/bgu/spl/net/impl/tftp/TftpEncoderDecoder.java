@@ -36,8 +36,9 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
         if(waitForZero){
             b.add(nextByte);
             if(nextByte==(byte)0){
-                byte[] ans = new byte[b.size()];
-                for (int i = 0; i < b.size(); i++) {
+                int size=b.size();
+                byte[] ans = new byte[size];
+                for (int i = 0; i < size; i++) {
                     ans[i]=b.remove(0);
                 }
                 reset();
@@ -51,8 +52,9 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
             b.add(nextByte);
             sizeLeftToDecode--;
             if (sizeLeftToDecode==0){
-                byte[] ans = new byte[b.size()];
-                for (int i = 0; i < b.size(); i++) {
+                int size = b.size();
+                byte[] ans = new byte[size];
+                for (int i = 0; i <size; i++) {
                     ans[i]=b.remove(0);
                 }
                 reset();
@@ -120,6 +122,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
         this.gotTheThird = false;
         this.gotTheForth = false;
         this.waitForZero=false;
+        b=new LinkedList<>();
     }
 
     public byte[] encode(byte[] message) {

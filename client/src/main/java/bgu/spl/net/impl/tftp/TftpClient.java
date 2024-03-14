@@ -11,25 +11,25 @@ import java.util.Scanner;
 public class TftpClient {
     public static void main(String[] args) throws IOException {
         args = new String[2];
-        TftpEncoderDecoder encdecKeyBoard = new TftpEncoderDecoder();
-        TftpProtocolClient protocolKeyBoard = new TftpProtocolClient();
-        TftpEncoderDecoder encdecServer = new TftpEncoderDecoder();
-        TftpProtocolClient protocolServer = new TftpProtocolClient();
+        TftpEncoderDecoder encdec = new TftpEncoderDecoder();
+        TftpProtocolClient protocol = new TftpProtocolClient();
+//        TftpEncoderDecoder encdec = new TftpEncoderDecoder();
+//        TftpProtocolClient protocol = new TftpProtocolClient();
 
 
         try (Socket sock = new Socket("localhost", 7777)) {
             BufferedInputStream in = new BufferedInputStream(sock.getInputStream());
             BufferedOutputStream out = new BufferedOutputStream(sock.getOutputStream());
-            KeyBoardListener KeyBoard = new KeyBoardListener(encdecKeyBoard,protocolKeyBoard,out);
+            KeyBoardListener KeyBoard = new KeyBoardListener(encdec,protocol,out);
             Thread KeyBoardThread = new Thread(KeyBoard);
-            ServerListener Server = new ServerListener(encdecServer,protocolServer,in,out,KeyBoard);
+            ServerListener Server = new ServerListener(encdec,protocol,in,out,KeyBoard);
             Thread ServerThread = new Thread(Server);
-            System.out.println("Starting Threads:");
+            System.out.println("Starting Threads");
             KeyBoardThread.start();
             ServerThread.start();
+            System.out.println("Server connections online");
             KeyBoardThread.join();
             ServerThread.join();
-
         } catch (IOException ex) {
             ex.printStackTrace();
         }
@@ -49,27 +49,60 @@ class KeyBoardListener implements Runnable {
         this.out = out;
     }
 
-    public void run() {
-        while (!terminate) {
-            try {
-            String commandS = scanner.nextLine();
-            byte[] send = null;
-            send = (byte[]) protocol.process(commandS.getBytes());
-            if (send != null) {
-                try {
-                    synchronized (out) {
-                        out.write((encdec.encode(send)), 0, send.length);
-                        out.flush();
+    private  boolean checkCommand(String commandS){
+        boolean good=true;
+        if(commandS.length()<3)
+            return false;
+        else {
+            char s0 = commandS.charAt(0);
+            char s1 = commandS.charAt(1);
+            char s2 = commandS.charAt(2);
+            String test= ""+s0+s1+s2;
+            if(!test.equals("RRQ") && !test.equals("WRQ")) {
+                if(commandS.length()==3)
+                    return false;
+                else {
+                    test += commandS.charAt(3);
+                    if(!test.equals("DIRQ") && !test.equals("DISC")) {
+                        if(commandS.length()==4)
+                            return false;
+                        else {
+                            test += commandS.charAt(4);
+                            if(!test.equals("LOGRQ") && !test.equals("DELRQ")) {
+                                return false;
+                            }
+                        }
                     }
-                } catch (IOException ex) {
-                    ex.printStackTrace();
-                }
-                synchronized (this) {
-                    wait();
                 }
             }
-            } catch (InterruptedException ignore) {}
         }
+        return true;
+    }
+
+    public void run() {
+        try {
+            while (!terminate) {
+                String commandS = scanner.nextLine();
+                if(!this.checkCommand(commandS))
+                    System.out.println("Error 4");
+                else {
+                    byte[] send = protocol.process(commandS.getBytes());
+                    if(send!=null) {
+                        try {
+                            synchronized (out) {
+                                out.write((encdec.encode(send)), 0, send.length);
+                                out.flush();
+                            }
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                        synchronized (this) {
+                            wait();
+                        }
+                    }
+                }
+            }
+        } catch (InterruptedException ignore) {}
     }
     public void Terminate(){terminate=true;}
     
@@ -99,7 +132,7 @@ class ServerListener implements Runnable {
             byte[] processedAnswer = null;
 
             try{
-                while ((read = in.read()) >= 0 && nextMessage==null) {
+                while (nextMessage==null && (read = in.read()) >= 0) {
                     nextMessage = encdec.decodeNextByte((byte) read);
                     if(nextMessage!=null)
                         processedAnswer = protocol.processServer(nextMessage);
@@ -123,6 +156,11 @@ class ServerListener implements Runnable {
                     synchronized (out){
                         out.write((encdec.encode(processedAnswer)), 0, processedAnswer.length);
                         out.flush();
+                        if(protocol.isFileTransferDone())
+                            synchronized (KeyBoard) {
+                                KeyBoard.notifyAll();
+                            }
+
                     }
                 } catch (IOException e) {
                     e.printStackTrace();

@@ -22,13 +22,19 @@ class UsersHolder{
 }
 
 public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
-    final private String PATH = "server/Flies/";
+    final private String PATH = FindPath()+"\\";
     private boolean shouldTerminate = false;
     private int connectionId;
     private Connections<byte[]> connections;
     private LinkedList<byte[]> dataHolder;
     private String FileName;
     private LinkedList<byte[]> packetsToSend;
+
+    static String FindPath(){
+        Path directoryPath = Paths.get("Files");
+            return directoryPath.toAbsolutePath().toString();
+}
+
 
     @Override
     public void start(int connectionId, Connections<byte[]> connections) {
@@ -75,12 +81,12 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
                     break;
                 } else {
                     Error(6);
+                    break;
                 }
             default:
                 Error(4);
         }
     }
-
     private boolean isLoggedIn() {
         boolean isLoggedIn = UsersHolder.getUsers().get(connectionId);
         if (!isLoggedIn) {
@@ -88,7 +94,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         }
         return true;
     }
-
     /*    error Value Meaning:
                 0    Not defined, see error message (if any).
                 1    File not found – RRQ DELRQ of non-existing file.
@@ -100,33 +105,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
                 7    User already logged in – Login username already connected.  */
 
     private void Error(int Error) {
-//        String msg = "";
-//        switch (Error) {
-//            case 0:
-//                msg = "Error 0";
-//                break;
-//            case 1:
-//                msg = "Error 1";
-//                break;
-//            case 2:
-//                msg = "Error 2";
-//                break;
-//            case 3:
-//                msg = "Error 3";
-//                break;
-//            case 4:
-//                msg = "Error 4";
-//                break;
-//            case 5:
-//                msg = "Error 5";
-//                break;
-//            case 6:
-//                msg = "Error 6";
-//                break;
-//            case 7:
-//                msg = "Error 7";
-//        }
-
         byte[] BMsg = {(byte)0,(byte)5,(byte)0,(byte)Error,(byte)0};
         connections.send(connectionId, BMsg);
     }
@@ -150,13 +128,14 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     private void RRQ(byte[] messageData) {
         dataHolder = new LinkedList<>();
         FileName = new String(messageData);
+        FileName=FileName.substring(0,FileName.length()-1);
         Path filePath = Paths.get(PATH + FileName);
+        boolean test = Files.isReadable(filePath);
         if (Files.exists(filePath)) {
             if (!isLoggedIn()) {
                 Error(6);
                 return;
             }
-            SendACK();
             byte[] fileContent = new byte[0];
             try {
                 fileContent = Files.readAllBytes(filePath);
@@ -235,7 +214,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         for (byte[] b : dataHolder) {
             sizeOfDataToSend += b.length;
         }
-        Byte[] theFileToSend = new Byte[sizeOfDataToSend];
+        byte[] theFileToSend = new byte[sizeOfDataToSend];
         int placeHere = 0;
         for (byte[] arrays : dataHolder) {
             System.arraycopy(arrays, 0, theFileToSend, placeHere, arrays.length);
@@ -243,28 +222,28 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         }
         boolean stop = false;
         short packetNumber = 1;
-        int currentPacketSize = Math.min(sizeOfDataToSend + 6, 512 + 6);
         while (!stop) {
+            int currentPacketSize = Math.min(sizeOfDataToSend + 6, 512 + 6);
             byte[] packet = new byte[currentPacketSize];
             packet[0] = (byte) 0;
             packet[1] = (byte) 3;
             short dataSegmentSize = (short) (currentPacketSize - 6);
-            byte[] dataSegmentSizeInBytes = {(byte) (dataSegmentSize >> 8), (byte) (dataSegmentSize & 0xff)};
+            byte[] dataSegmentSizeInBytes = {(byte) ((dataSegmentSize >> 8) & 0xFF), (byte) (dataSegmentSize & 0xFF)};
             packet[2] = dataSegmentSizeInBytes[0];
             packet[3] = dataSegmentSizeInBytes[1];
-            byte[] packetNumberInBytes = {(byte) (packetNumber >> 8), (byte) (packetNumber & 0xff)};
+            byte[] packetNumberInBytes = {(byte) (packetNumber >> 8), (byte) (packetNumber & 0xFF)};
             packet[4] = packetNumberInBytes[0];
             packet[5] = packetNumberInBytes[1];
             System.arraycopy(theFileToSend, (packetNumber - 1) * 512, packet, 6, currentPacketSize - 6);
             packetsToSend.addLast(packet);
             packetNumber++;
-            if (sizeOfDataToSend < 512) {
+            if (currentPacketSize < 512+6) {
                 stop = true;
             } else {
-                Byte[] newFile = new Byte[theFileToSend.length - 512];
-                System.arraycopy(theFileToSend, 512, newFile, 0, newFile.length);
-                theFileToSend = newFile;
-            }
+//                byte[] newFile = new byte[theFileToSend.length - 512];
+//                System.arraycopy(theFileToSend, 512, newFile, 0, newFile.length);
+//                theFileToSend = newFile;
+                sizeOfDataToSend-=512;}
         }
     }
 
@@ -302,7 +281,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             Error(7);
             return;
         }
-
         UsersHolder.getUsers().put(connectionId, true);
         SendACK();
     }

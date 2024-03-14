@@ -12,14 +12,20 @@ import java.nio.file.Paths;
 import java.util.*;
 
 public class TftpProtocolClient implements MessagingProtocol<byte[]> {
-    final private String PATH = "client/";
+    final private String PATH = FindPath()+"\\";
     private static LinkedList<byte[]> packetsToSend = new LinkedList<>();
     private static LinkedList<byte[]> dataHolder= new LinkedList<>();
     private static boolean shouldTerminate = false;
     private String FileName;
     private boolean nextTimeShouldTerminate=false;
 
-    //final  private String PATH =  "server/Flies/";
+    boolean isFileTransferDone = false;
+    private short lastOPcode = -1;
+
+    static String FindPath(){
+        Path directoryPath = Paths.get("MyFiles");
+        return directoryPath.toAbsolutePath().toString();
+    }
 
     /** user input handler
      * this function receives a users input and determines what is the corresponding function to activate.
@@ -51,7 +57,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
             case 'L'://LOGRQ
                 return LOGRQ(message);
             default:
-                toPrint("Error 4");
+                toPrint("Error 404 command not found");
                 return null;
         }
     }
@@ -112,12 +118,13 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      * • NOTE: KELVE YAM is not equal to kelve yam they have two different UTF-8 encodings.
      */
     private byte[] LOGRQ(String Command){
-        byte[] packet = new byte[Command.length()+3];
+        byte[] packet = new byte[Command.length()-3];
         byte[] usernameInBytes = Command.getBytes();
         packet[0] = (byte) 0;
         packet[1] = (byte) 7;
         System.arraycopy(usernameInBytes,6,packet,2,usernameInBytes.length-6);
-        packet[Command.length()+2] = (byte) 0;
+        packet[packet.length-1] = (byte) 0;
+        lastOPcode= 7;
         return packet;
     }
     /**
@@ -136,6 +143,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         packet[1] = (byte) 8;
         System.arraycopy(usernameInBytes,6,packet,2,usernameInBytes.length-6);
         packet[Command.length()+2] = (byte) 0;
+        lastOPcode= 8;
         return packet;
     }
     /**
@@ -169,6 +177,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
             dataHolder.add(Files.readAllBytes(path));
         } catch (IOException e) {}
         prepareDATA();
+        lastOPcode=2;
         return packet;
     }
     /**
@@ -193,13 +202,14 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
             System.out.println("file already exists");
             return null;
         }
-        byte[] packet = new byte[Command.length()+3];
-        byte[] usernameInBytes = Command.getBytes();
-        packet[0] = (byte) 0;
+        byte[] packet = new byte[filename.length()+3];
+        byte[] usernameInBytes = filename.getBytes();
         packet[1] = (byte) 1;
-        System.arraycopy(usernameInBytes,4,packet,2,usernameInBytes.length-4);
-        packet[Command.length()+2] = (byte) 0;
+        System.arraycopy(usernameInBytes,0,packet,2,usernameInBytes.length);
+        dataHolder=new LinkedList<>();
+        lastOPcode=1;
         return packet;
+
     }
     /**
      * 2.1.5 DIRQ
@@ -217,6 +227,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      */
     private byte[] DIRQ() {
         byte[] packet = {(byte)0,(byte)6};
+        lastOPcode= 6;
         return packet;
     }
     /**
@@ -234,6 +245,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
     private byte[] DISC(){
         byte[] packet = {(byte)0,(byte)0x0a};
         nextTimeShouldTerminate=true;
+        lastOPcode=10;
         return packet;
     }
 
@@ -244,8 +256,8 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         return packet;
     }
     private byte[] SendACK(short blockNumber){
-        byte first = (byte) (blockNumber & 0xFF); // Extracts the lower byte
-        byte second = (byte) ((blockNumber >> 8) & 0xFF); // Shifts and extracts the higher byte
+        byte first = (byte) ((blockNumber >> 8) & 0xFF); // Shifts and extracts the higher byte
+        byte second = (byte) (blockNumber & 0xFF); // Extracts the lower byte
         byte[] packet = {(byte)0,(byte)4,first,second};
         return packet;
     }
@@ -253,16 +265,17 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         if (messageData[1]==(byte)0){
             toPrint("ACK 0");
         }
-        if (!packetsToSend.isEmpty()){
+        if (nextTimeShouldTerminate) {
+            shouldTerminate = true;
+        }
+        else if (!packetsToSend.isEmpty()){
             return packetsToSend.removeFirst();
         }
-        if (nextTimeShouldTerminate){
-            shouldTerminate=true;
-        }
+
         return null;
+
     }
     private byte[] receiveDATA(byte[] Command){
-        dataHolder= new LinkedList<>();
         //removes the first two bytes into the short packetSize
         short packetSize = (short) (((short) Command[0]) << 8 | (short) (Command[1]) & 0x00ff);
         byte[] BlockNumberMessage = new byte[Command.length - 2];
@@ -281,17 +294,36 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
                 System.arraycopy(arrays, 0, theFile, i * 512, arrays.length);
                 i++;
             }
-            Path path = Paths.get(PATH + FileName);
-            try {
+            if (lastOPcode == 1) {
+                Path path = Paths.get(PATH + FileName);
+                try {
 
-                Path filePath = Paths.get(PATH + FileName);
-                Files.write(path, theFile);
-            } catch (IOException e) {
-            }
+                    Path filePath = Paths.get(PATH + FileName);
+                    Files.write(path, theFile);
+                    toPrint("RRQ " + FileName+ " complete");
+                } catch(IOException e){}
+             } else //DIRQ
+                DIRQPrinter();
+            isFileTransferDone=true;
         }
         return SendACK(blockNumber);
+    }
+
+    public boolean isFileTransferDone()
+    {
+        if(isFileTransferDone)
+        {
+            isFileTransferDone=false;
+            return true;
+        }
+        return false;
+    }
+
+    private void DIRQPrinter()
+    {
 
     }
+
     private void prepareDATA(){
         packetsToSend = new LinkedList<>();
         int sizeOfDataToSend = 0;
