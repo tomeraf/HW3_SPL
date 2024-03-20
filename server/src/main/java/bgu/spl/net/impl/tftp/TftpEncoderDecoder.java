@@ -53,7 +53,8 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
             b.add(nextByte);
             sizeLeftToDecode--;
             if (sizeLeftToDecode==0){
-                byte[] ans = new byte[b.size()];
+                int size=b.size();
+                byte[] ans = new byte[size];
                 for (int i = 0; i < b.size(); i++) {
                     ans[i]=b.remove(0);
                 }

@@ -21,6 +21,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
 
     boolean isFileTransferDone = false;
     private short lastOPcode = -1;
+    private LinkedList<Byte> forTheDIRQ;
 
     static String FindPath(){
         Path directoryPath = Paths.get("MyFiles");
@@ -97,13 +98,13 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
 
     private byte[] BCAST(byte[] messageData) {
 
-        byte[] filenameInBytes = new byte[messageData.length-1];
-        System.arraycopy(messageData,0,filenameInBytes,0,filenameInBytes.length);
+        byte[] filenameInBytes = new byte[messageData.length-2];
+        System.arraycopy(messageData,1,filenameInBytes,0,filenameInBytes.length);
         String filename = new String(filenameInBytes, StandardCharsets.UTF_8); // Convert byte array to String
         if (messageData[0]==(byte)0){
-            toPrint("BCAST delete" + filename);
+            toPrint("BCAST delete " + filename);
         } else {
-            toPrint("BCAST add" + filename);
+            toPrint("BCAST add " + filename);
         }
         return new byte[]{(byte) 0};
     }
@@ -118,8 +119,8 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      * • NOTE: KELVE YAM is not equal to kelve yam they have two different UTF-8 encodings.
      */
     private byte[] LOGRQ(String Command){
-        byte[] packet = new byte[Command.length()-3];
         byte[] usernameInBytes = Command.getBytes();
+        byte[] packet = new byte[3 + usernameInBytes.length - 6];
         packet[0] = (byte) 0;
         packet[1] = (byte) 7;
         System.arraycopy(usernameInBytes,6,packet,2,usernameInBytes.length-6);
@@ -137,12 +138,12 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      * • NOTE: ”lehem hvita” is one filename with space char in it (this is ok).
      */
     private byte[] DELRQ(String Command){
-        byte[] packet = new byte[Command.length()+3];
-        byte[] usernameInBytes = Command.getBytes();
+        byte[] FileToDeleteNameInBytes = Command.getBytes();
+        byte[] packet = new byte[3 + FileToDeleteNameInBytes.length - 6];
         packet[0] = (byte) 0;
         packet[1] = (byte) 8;
-        System.arraycopy(usernameInBytes,6,packet,2,usernameInBytes.length-6);
-        packet[Command.length()+2] = (byte) 0;
+        System.arraycopy(FileToDeleteNameInBytes,6,packet,2,FileToDeleteNameInBytes.length-6);
+        packet[packet.length-1] = (byte) 0;
         lastOPcode= 8;
         return packet;
     }
@@ -302,8 +303,11 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
                     Files.write(path, theFile);
                     toPrint("RRQ " + FileName+ " complete");
                 } catch(IOException e){}
-             } else //DIRQ
-                DIRQPrinter();
+                dataHolder = new LinkedList<>();
+             } else { //DIRQ
+                DIRQPrinter(theFile);
+                dataHolder = new LinkedList<>();
+            }
             isFileTransferDone=true;
         }
         return SendACK(blockNumber);
@@ -319,9 +323,35 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         return false;
     }
 
-    private void DIRQPrinter()
+    private void DIRQPrinter(byte[] theDIRQ)
     {
+        forTheDIRQ = new LinkedList<Byte>();
+        byte[] nameOfFile;
+        for (byte b : theDIRQ) {
+            nameOfFile = decodeForDIRQ(b);
+            if (nameOfFile!=null){
+                String nameInString = new String(nameOfFile, StandardCharsets.UTF_8);
+                toPrint(nameInString);
+            }
+        }
+        nameOfFile = decodeForDIRQ((byte)0);
+        if (nameOfFile!=null){
+            String nameInString = new String(nameOfFile, StandardCharsets.UTF_8);
+            toPrint(nameInString);
+        }
+    }
 
+    private byte[] decodeForDIRQ(byte b) {
+        if (b != (byte) 0) {
+            forTheDIRQ.addLast(b);
+            return null;
+        }
+        int size = forTheDIRQ.size();
+        byte[] ans = new byte[size];
+        for (int i = 0; i < size; i++) {
+            ans[i] = forTheDIRQ.remove(0);
+        }
+        return ans;
     }
 
     private void prepareDATA(){
