@@ -204,16 +204,20 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     }
 
     private void prepareDATA() {
+        // calculating the file size
         int sizeOfDataToSend = 0;
         for (byte[] b : dataHolder) {
             sizeOfDataToSend += b.length;
         }
+        // creating a file with the calculated size
         byte[] theFileToSend = new byte[sizeOfDataToSend];
         int placeHere = 0;
+        //placing the data int the byte file
         for (byte[] arrays : dataHolder) {
             System.arraycopy(arrays, 0, theFileToSend, placeHere, arrays.length);
             placeHere += arrays.length;
         }
+        // a boolean to know where to stop
         boolean stop = false;
         short packetNumber = 1;
         while (!stop) {
@@ -279,7 +283,9 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
 
     private void DELRQ(byte[] messageData) {
         dataHolder = new LinkedList<>();
-        FileName = new String(messageData);
+        byte[] filename = new byte[messageData.length-1];
+        System.arraycopy(messageData,0,filename,0,filename.length);
+        FileName = new String(filename);
         Path filePath = Paths.get(PATH + FileName);
         if (Files.exists(filePath)) {
             if (!isLoggedIn()) {
