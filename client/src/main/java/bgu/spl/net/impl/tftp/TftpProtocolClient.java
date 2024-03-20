@@ -97,15 +97,15 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
 
     private byte[] BCAST(byte[] messageData) {
 
-        byte[] filenameInBytes = new byte[messageData.length-1];
-        System.arraycopy(messageData,0,filenameInBytes,0,filenameInBytes.length);
+        byte[] filenameInBytes = new byte[messageData.length-2];
+        System.arraycopy(messageData,1,filenameInBytes,0,filenameInBytes.length);
         String filename = new String(filenameInBytes, StandardCharsets.UTF_8); // Convert byte array to String
         if (messageData[0]==(byte)0){
-            toPrint("BCAST delete" + filename);
+            toPrint("BCAST delete " + filename);
         } else {
-            toPrint("BCAST add" + filename);
+            toPrint("BCAST add " + filename);
         }
-        return new byte[]{(byte) 0};
+        return null;
     }
     // client keyboard operated commands
     /**
@@ -161,17 +161,18 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      */
     private byte[] WRQ(String Command){
         String filename = Command.substring(4);
+        FileName=filename;
         Path path = Paths.get(PATH + filename) ;
         if (!Files.exists(path)){
             System.out.println("file does not exists");
             return null;
         }
-        byte[] packet = new byte[Command.length()+3];
+        byte[] packet = new byte[filename.length()+3];
         byte[] usernameInBytes = Command.getBytes();
         packet[0] = (byte) 0;
         packet[1] = (byte) 2;
         System.arraycopy(usernameInBytes,4,packet,2,usernameInBytes.length-4);
-        packet[Command.length()+2] = (byte) 0;
+        packet[packet.length-1] = (byte) 0;
         dataHolder.clear();
         try {
             dataHolder.add(Files.readAllBytes(path));
@@ -262,18 +263,23 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         return packet;
     }
     private byte[] ACKReceive(byte[] messageData) {
-        if (messageData[1]==(byte)0){
+        if (messageData[1]==(byte)0 && messageData[0]==(byte)0 && packetsToSend.isEmpty()){
             toPrint("ACK 0");
+            if (nextTimeShouldTerminate)
+                shouldTerminate = true;
+            return null;
         }
-        if (nextTimeShouldTerminate) {
-            shouldTerminate = true;
-        }
-        else if (!packetsToSend.isEmpty()){
+
+        short BlockNumber = (short) (((short) messageData[0]) << 8 | (short) (messageData[1]) & 0x00ff);
+        toPrint("ACK "+BlockNumber);
+        if (!packetsToSend.isEmpty()){
             return packetsToSend.removeFirst();
         }
-
-        return null;
-
+        else {
+            isFileTransferDone = true;
+            toPrint("WRQ " + FileName + " complete");
+            return new byte[]{(byte) 0};
+        }
     }
     private byte[] receiveDATA(byte[] Command){
         //removes the first two bytes into the short packetSize
@@ -295,18 +301,22 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
                 i++;
             }
             if (lastOPcode == 1) {
-                Path path = Paths.get(PATH + FileName);
                 try {
-
                     Path filePath = Paths.get(PATH + FileName);
-                    Files.write(path, theFile);
-                    toPrint("RRQ " + FileName+ " complete");
+                    if (Files.exists(filePath))
+                        toPrint("Error 5");
+                    else {
+                        Files.write(filePath, theFile);
+                        toPrint("RRQ " + FileName + " complete");
+                    }
                 } catch(IOException e){}
              } else //DIRQ
                 DIRQPrinter();
             isFileTransferDone=true;
+            return new byte[]{(byte) 0};
         }
-        return SendACK(blockNumber);
+        else
+            return SendACK(blockNumber);
     }
 
     public boolean isFileTransferDone()
@@ -330,7 +340,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         for (byte[] b : dataHolder) {
             sizeOfDataToSend += b.length;
         }
-        Byte[] theFileToSend = new Byte[sizeOfDataToSend];
+        byte[] theFileToSend = new byte[sizeOfDataToSend];
         int placeHere = 0;
         for (byte[] arrays : dataHolder) {
             System.arraycopy(arrays, 0, theFileToSend, placeHere, arrays.length);
@@ -338,10 +348,9 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         }
         boolean stop = false;
         short packetNumber = 1;
-        int currentPacketSize = Math.min(sizeOfDataToSend + 6, 512 + 6);
         while (!stop) {
+            int currentPacketSize = Math.min(sizeOfDataToSend + 6, 512 + 6);
             byte[] packet = new byte[currentPacketSize];
-            packet[0] = (byte) 0;
             packet[1] = (byte) 3;
             short dataSegmentSize = (short) (currentPacketSize - 6);
             byte[] dataSegmentSizeInBytes = {(byte) (dataSegmentSize >> 8), (byte) (dataSegmentSize & 0xff)};
@@ -350,15 +359,13 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
             byte[] packetNumberInBytes = {(byte) (packetNumber >> 8), (byte) (packetNumber & 0xff)};
             packet[4] = packetNumberInBytes[0];
             packet[5] = packetNumberInBytes[1];
-            System.arraycopy(theFileToSend, (packetNumber - 1) * 512, packet, 6, currentPacketSize - 6);
+            System.arraycopy(theFileToSend, (packetNumber - 1) * 512, packet, 6, dataSegmentSize);
             packetsToSend.addLast(packet);
             packetNumber++;
             if (currentPacketSize < 512) {
                 stop = true;
             } else {
-                Byte[] newFile = new Byte[theFileToSend.length - 512];
-                System.arraycopy(theFileToSend, 512, newFile, 0, newFile.length);
-                theFileToSend = newFile;
+                sizeOfDataToSend-=512;
             }
         }
     }

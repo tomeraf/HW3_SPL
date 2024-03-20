@@ -88,7 +88,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
             b.add(nextByte);
             theThird = nextByte;
             gotTheThird=true;
-            if (opCode == (byte)9)      //BCAST
+            if (opCode == (byte)9 || opCode == (byte)7 || opCode == (byte)1 || opCode == (byte)2)      //BCAST,LOGRQ,RRQ,WRQ
                 waitForZero = true;
             return null;
         }
@@ -106,7 +106,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
                 sizeLeftToDecode = (short) (((short) theThird) << 8 | (short) (theForth) & 0x00ff);
                 sizeLeftToDecode+=2;
                 return null;
-            } else {                    //LOGRQ,WRQ,RRQ,ERROR
+            } else {                    //LOGRQ,ERROR
                 waitForZero=true;
             }
         }

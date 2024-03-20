@@ -53,8 +53,9 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
             b.add(nextByte);
             sizeLeftToDecode--;
             if (sizeLeftToDecode==0){
-                byte[] ans = new byte[b.size()];
-                for (int i = 0; i < b.size(); i++) {
+                int size = b.size();
+                byte[] ans = new byte[size];
+                for (int i = 0; i < size; i++) {
                     ans[i]=b.remove(0);
                 }
                 reset();
@@ -87,7 +88,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
             b.add(nextByte);
             theThird = nextByte;
             gotTheThird=true;
-            if (opCode == (byte)9 || opCode == (byte)7)      //BCAST/LOGRQ
+            if (opCode == (byte)9 || opCode == (byte)7 || opCode == (byte)1 || opCode == (byte)2)      //BCAST,LOGRQ,RRQ,WRQ
                 waitForZero = true;
             return null;
         }
@@ -105,7 +106,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<byte[]> {
                 sizeLeftToDecode = (short) (((short) theThird) << 8 | (short) (theForth) & 0x00ff);
                 sizeLeftToDecode+=2;
                 return null;
-            } else {                    //,WRQ,RRQ,ERROR
+            } else {                    //ERROR
                 waitForZero=true;
             }
         }

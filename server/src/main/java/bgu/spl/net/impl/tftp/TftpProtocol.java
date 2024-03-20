@@ -72,7 +72,11 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             case 8:
                 DELRQ(messageData);
                 break;
-            //case 9: BCAST
+            case 9:
+                String filename = new String(messageData);
+                filename=filename.substring(0,filename.length()-1);
+                BCAST((byte)1,filename.getBytes());
+                break;
             case 10:
                 if (isLoggedIn()) {
                     UsersHolder.getUsers().remove(connectionId);
@@ -115,13 +119,9 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     }
 
     private void SendACK(short blockNumber) {
-        byte[] ACK = "ACK".getBytes();
-        byte first = (byte) (blockNumber & 0xFF); // Extracts the lower byte
-        byte second = (byte) ((blockNumber >> 8) & 0xFF); // Shifts and extracts the higher byte
-        byte[] BMsg = {0, 4, first, second};
-        byte[] send = new byte[ACK.length + BMsg.length];
-        System.arraycopy(ACK, 0, send, 0, ACK.length);
-        System.arraycopy(BMsg, 0, send, ACK.length, BMsg.length);
+        byte first = (byte) ((blockNumber >> 8) & 0xFF); // Shifts and extracts the higher byte
+        byte second = (byte) (blockNumber & 0xFF); // Extracts the lower byte
+        byte[]  send = {0, 4, first, second};
         connections.send(connectionId, send);
     }
 
@@ -130,7 +130,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         FileName = new String(messageData);
         FileName=FileName.substring(0,FileName.length()-1);
         Path filePath = Paths.get(PATH + FileName);
-        boolean test = Files.isReadable(filePath);
         if (Files.exists(filePath)) {
             if (!isLoggedIn()) {
                 Error(6);
@@ -156,6 +155,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     private void WRQ(byte[] messageData) {
         dataHolder = new LinkedList<>();
         FileName = new String(messageData);
+        FileName=FileName.substring(0,FileName.length()-1);
         Path filePath = Paths.get(PATH + FileName);
         if (Files.exists(filePath))
             Error(5);
@@ -179,7 +179,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
 
         dataHolder.addLast(data);
         SendACK(blockNumber);
-
         if (packetSize < 512) {
             //create file
             byte[] theFile = new byte[(blockNumber - 1) * 512 + packetSize];
@@ -188,17 +187,12 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
                 System.arraycopy(arrays, 0, theFile, i * 512, arrays.length);
                 i++;
             }
-            Path path = Paths.get(PATH + FileName);
             try {
-
                 Path filePath = Paths.get(PATH + FileName);
                 if (Files.exists(filePath))
                     Error(5);
                 else {
-                    Files.write(path, theFile);
-                    String msg = "WRQ " + FileName + " complete";
-                    byte[] send = msg.getBytes();
-                    connections.send(connectionId, send);
+                    Files.write(filePath, theFile);
                     this.BCAST((byte) 1, FileName.getBytes());
                 }
             } catch (IOException e) {
@@ -240,10 +234,8 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             if (currentPacketSize < 512+6) {
                 stop = true;
             } else {
-//                byte[] newFile = new byte[theFileToSend.length - 512];
-//                System.arraycopy(theFileToSend, 512, newFile, 0, newFile.length);
-//                theFileToSend = newFile;
-                sizeOfDataToSend-=512;}
+                sizeOfDataToSend-=512;
+            }
         }
     }
 
@@ -323,13 +315,5 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         return shouldTerminate;
     }
 
-//    private byte[] removeZeroFromEnd(byte[] messageData) {
-//        byte[] fileName = new byte[messageData.length - 1];
-//        for (int i = 0; i < messageData.length - 1; i++) {
-//            fileName[i] = messageData[i];
-//        }
-//        return fileName;
-//
-//
-//    }
+
 }
