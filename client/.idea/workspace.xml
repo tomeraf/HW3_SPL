@@ -4,14 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="aafeab24-b06d-4a20-b35f-44a3a23cfb66" name="Changes" comment="K">
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_12_03_2024_19_52_[Changes]/shelved.patch" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_12_03_2024_19_52__Changes_.xml" beforeDir="false" />
+    <list default="true" id="aafeab24-b06d-4a20-b35f-44a3a23cfb66" name="Changes" comment="tomer changes BCAST WRQ">
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Merge_at_21_03_2024_0_44__Changes_.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Merge_at_21_03_2024_0_45__Changes_.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpEncoderDecoder.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpEncoderDecoder.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpClient.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpProtocolClient.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpProtocolClient.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpEncoderDecoder.java" beforeDir="false" afterPath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpEncoderDecoder.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpProtocol.java" beforeDir="false" afterPath="$PROJECT_DIR$/../server/src/main/java/bgu/spl/net/impl/tftp/TftpProtocol.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/Files/B.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/Files/C.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/Files/D.txt" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../server/Files/E.txt" beforeDir="false" />
     </list>
     <list id="3d02c2ab-e723-44c4-ac47-c1f932e73eee" name="Changes by Moraz" comment="" />
     <option name="SHOW_DIALOG" value="false" />
@@ -47,7 +49,7 @@
     "RunOnceActivity.OpenProjectViewOnStart": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "itamars-branch__the__second",
+    "git-widget-placeholder": "itamars-branch",
     "jdk.selected.JAVA_MODULE": "18",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/uni/C/spl/HW3/HW3_SPL",
@@ -93,7 +95,7 @@
       <workItem from="1710420606927" duration="17000" />
       <workItem from="1710420637391" duration="43000" />
       <workItem from="1710420715478" duration="20293000" />
-      <workItem from="1710962066124" duration="11855000" />
+      <workItem from="1710962066124" duration="12411000" />
     </task>
     <task id="LOCAL‎-00001" summary="decode changed">
       <option name="closed" value="true" />
@@ -111,7 +113,15 @@
       <option name="project" value="LOCAL‎" />
       <updated>1710351269386</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="tomer changes BCAST WRQ">
+      <option name="closed" value="true" />
+      <created>1710974448239</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1710974448239</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -131,7 +141,8 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="decode changed" />
     <MESSAGE value="K" />
-    <option name="LAST_COMMIT_MESSAGE" value="K" />
+    <MESSAGE value="tomer changes BCAST WRQ" />
+    <option name="LAST_COMMIT_MESSAGE" value="tomer changes BCAST WRQ" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -147,24 +158,9 @@
           <option name="timeStamp" value="13" />
         </line-breakpoint>
         <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpEncoderDecoder.java</url>
-          <line>59</line>
-          <option name="timeStamp" value="72" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpProtocolClient.java</url>
-          <line>99</line>
-          <option name="timeStamp" value="80" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
-          <url>file://$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpProtocolClient.java</url>
-          <line>272</line>
-          <option name="timeStamp" value="83" />
-        </line-breakpoint>
-        <line-breakpoint enabled="true" type="java-line">
           <url>file://$PROJECT_DIR$/src/main/java/bgu/spl/net/impl/tftp/TftpClient.java</url>
-          <line>137</line>
-          <option name="timeStamp" value="84" />
+          <line>131</line>
+          <option name="timeStamp" value="94" />
         </line-breakpoint>
       </breakpoints>
     </breakpoint-manager>

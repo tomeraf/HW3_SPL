@@ -312,12 +312,14 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
                     }
                 } catch(IOException e){}
                 dataHolder = new LinkedList<>();
+                isFileTransferDone=true;
+                return new byte[]{(byte) 0};
              } else { //DIRQ
                 DIRQPrinter(theFile);
                 dataHolder = new LinkedList<>();
+                isFileTransferDone=true;
+                return null;
             }
-            isFileTransferDone=true;
-            return new byte[]{(byte) 0};
         }
         else
             return SendACK(blockNumber);

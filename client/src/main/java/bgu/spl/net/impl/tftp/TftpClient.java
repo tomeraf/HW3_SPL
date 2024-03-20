@@ -167,7 +167,6 @@ class ServerListener implements Runnable {
                 }
             }
         }
-
     }
         
     public void Terminate(){terminate=true;}
