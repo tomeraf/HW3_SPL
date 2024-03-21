@@ -19,7 +19,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
     private String FileName;
     private boolean nextTimeShouldTerminate=false;
 
-    boolean isFileTransferDone = false;
+    boolean isFileTransferDone = true;
     private short lastOPcode = -1;
     private LinkedList<Byte> forTheDIRQ;
 
@@ -92,6 +92,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
     }
 
     private byte[] ERROR(byte[] messageData) {
+        isFileTransferDone=true;
         toPrint("Error " + messageData[1]);
         return null;
     }
@@ -106,7 +107,10 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         } else {
             toPrint("BCAST add " + filename);
         }
-        return null;
+        if(isFileTransferDone){
+            return null;
+        }
+        return new byte[]{(byte)0};
     }
     // client keyboard operated commands
     /**
@@ -161,6 +165,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      * • Example of Command: WRQ Operation Grandma.mp4
      */
     private byte[] WRQ(String Command){
+        isFileTransferDone=false;
         String filename = Command.substring(4);
         FileName=filename;
         Path path = Paths.get(PATH + filename) ;
@@ -197,6 +202,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      * • Example of Command: RRQ kelve yam.mp3
      */
     private byte[] RRQ(String Command){
+        isFileTransferDone=false;
         String filename = Command.substring(4);
         this.FileName = filename;
         Path path = Paths.get(PATH + filename) ;
@@ -211,7 +217,6 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
         dataHolder=new LinkedList<>();
         lastOPcode=1;
         return packet;
-
     }
     /**
      * 2.1.5 DIRQ
@@ -228,6 +233,8 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
      *      <file name n>\n
      */
     private byte[] DIRQ() {
+        isFileTransferDone=false;
+        dataHolder = new LinkedList<>();
         byte[] packet = {(byte)0,(byte)6};
         lastOPcode= 6;
         return packet;
@@ -313,7 +320,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
                 } catch(IOException e){}
                 dataHolder = new LinkedList<>();
                 isFileTransferDone=true;
-                return new byte[]{(byte) 0};
+                return null;
              } else { //DIRQ
                 DIRQPrinter(theFile);
                 dataHolder = new LinkedList<>();
@@ -327,12 +334,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
 
     public boolean isFileTransferDone()
     {
-        if(isFileTransferDone)
-        {
-            isFileTransferDone=false;
-            return true;
-        }
-        return false;
+        return isFileTransferDone;
     }
 
     private void DIRQPrinter(byte[] theDIRQ)
@@ -367,6 +369,7 @@ public class TftpProtocolClient implements MessagingProtocol<byte[]> {
     }
 
     private void prepareDATA(){
+        isFileTransferDone=false;
         packetsToSend = new LinkedList<>();
         int sizeOfDataToSend = 0;
         for (byte[] b : dataHolder) {

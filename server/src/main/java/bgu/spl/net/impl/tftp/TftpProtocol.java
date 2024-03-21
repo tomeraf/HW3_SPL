@@ -9,16 +9,15 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 class UsersHolder{
     public static Map<Integer,Boolean> users=new HashMap<>();
-    public static Map<Integer,Boolean> getUsers(){
+    public static Map<Integer,Boolean> getUsers() {
         if (users == null)
-             users=new HashMap<>();
+            users = new HashMap<>();
         return users;
     }
-
-
 }
 
 public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
@@ -29,6 +28,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
     private LinkedList<byte[]> dataHolder;
     private String FileName;
     private LinkedList<byte[]> packetsToSend;
+
 
     static String FindPath(){
         Path directoryPath = Paths.get("Files");
@@ -295,7 +295,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             try {
                 Files.delete(filePath);
                 this.SendACK();
-                this.BCAST((byte) 0, messageData);
+                this.BCAST((byte) 0, filename);
             } catch (IOException e) {
             }
         } else {
