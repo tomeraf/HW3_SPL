@@ -200,7 +200,6 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         short blockNumber = (short) (((short) BlockNumberMessage[0]) << 8 | (short) (BlockNumberMessage[1]) & 0x00ff);
         byte[] data = new byte[BlockNumberMessage.length - 2];
         System.arraycopy(BlockNumberMessage, 2, data, 0, BlockNumberMessage.length - 2);
-
         dataHolder.addLast(data);
         SendACK(blockNumber);
         if (packetSize < 512) {
@@ -217,6 +216,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
                     Error(5);
                 else {
                     Files.write(filePath, theFile);
+                    UsersHolder.lockers.put(FileName,new ReentrantReadWriteLock());
                     this.BCAST((byte) 1, FileName.getBytes());
                 }
             } catch (IOException e) {
@@ -234,6 +234,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         for (byte[] b : dataHolder) {
             sizeOfDataToSend += b.length;
         }
+
         // creating a file with the calculated size
         byte[] theFileToSend = new byte[sizeOfDataToSend];
         int placeHere = 0;
