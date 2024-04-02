@@ -20,14 +20,14 @@ public class TftpServer<T> extends BaseServer {
     }
 
     public static void main(String[] args) {
-
+        UsersHolder.startReaderWriter();
         // you can use any server...
         Server.threadPerClient(
                 7777, //port
                 () -> new TftpProtocol(), //protocol factory
                 TftpEncoderDecoder::new //message encoder decoder factory
         ).serve();
-        int i = 8;
+
     }
 
 

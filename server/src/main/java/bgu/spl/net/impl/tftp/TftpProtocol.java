@@ -142,26 +142,38 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         FileName = new String(messageData);
         FileName=FileName.substring(0,FileName.length()-1);
         Path filePath = Paths.get(PATH + FileName);
-        if (Files.exists(filePath)) {
-            if (!isLoggedIn()) {
-                Error(6);
-                return;
-            }
-            byte[] fileContent = new byte[0];
+        if (UsersHolder.lockers.get(FileName) != null){
+            UsersHolder.lockers.get(FileName).readLock().lock();
             try {
-                fileContent = Files.readAllBytes(filePath);
-            } catch (IOException e) {
-                Error(2);
-                return;
+                if (Files.exists(filePath)) {
+                    if (!isLoggedIn()) {
+                        Error(6);
+                        return;
+                    }
+                    byte[] fileContent = new byte[0];
+                    try {
+                        fileContent = Files.readAllBytes(filePath);
+                    } catch (IOException e) {
+                        Error(2);
+                        return;
+                    }
+                    dataHolder.clear();
+                    dataHolder.add(fileContent);
+                    packetsToSend.clear();
+                    this.prepareDATA();
+                    ACKReceive();
+                } else {
+                    Error(1);
+                }
             }
-            dataHolder.clear();
-            dataHolder.add(fileContent);
-            packetsToSend.clear();
-            this.prepareDATA();
-            ACKReceive();
-        } else {
+            finally{
+                UsersHolder.lockers.get(FileName).readLock().unlock();
+            }
+        } else{
             Error(1);
         }
+
+
     }
 
     private void WRQ(byte[] messageData) {
@@ -210,6 +222,7 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
             } catch (IOException e) {
 
             }
+
 
         }
 
@@ -299,17 +312,31 @@ public class TftpProtocol implements BidiMessagingProtocol<byte[]> {
         System.arraycopy(messageData,0,filename,0,filename.length);
         FileName = new String(filename);
         Path filePath = Paths.get(PATH + FileName);
-        if (Files.exists(filePath)) {
-            if (!isLoggedIn()) {
-                Error(5);
-                return;
-            }
+        if (UsersHolder.lockers.get(FileName) != null){
+            UsersHolder.lockers.get(FileName).writeLock().lock();
             try {
-                Files.delete(filePath);
-                this.SendACK();
-                this.BCAST((byte) 0, filename);
-            } catch (IOException e) {
+                if (Files.exists(filePath)) {
+                    if (!isLoggedIn()) {
+                        Error(5);
+                        return;
+                    }
+                    try {
+                        Files.delete(filePath);
+                        this.SendACK();
+                        this.BCAST((byte) 0, filename);
+                    } catch (IOException e) {
+                    }
+
             }
+                else
+                    Error(1);
+            }
+            finally {
+                UsersHolder.lockers.get(FileName).writeLock().unlock();
+                while (UsersHolder.lockers.get(FileName).hasQueuedThreads());
+                UsersHolder.lockers.remove(FileName);
+            }
+
         } else {
             Error(1);
         }
