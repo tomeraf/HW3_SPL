@@ -9,14 +9,26 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 class UsersHolder{
-    public static Map<Integer,Boolean> users=new HashMap<>();
-    public static Map<Integer,Boolean> getUsers() {
+    public static Map<Integer,Boolean> users;
+    public static Map<Integer,Boolean> getUsers(){
         if (users == null)
-            users = new HashMap<>();
+            users=new HashMap<>();
         return users;
+    }
+    public static Map<String,ReentrantReadWriteLock> lockers;
+    public static void startReaderWriter(){
+        users = new HashMap<>();
+        lockers = new WeakHashMap<String,ReentrantReadWriteLock>();
+        File directory = new File(TftpProtocol.FindPath()+"\\");
+        File[] files = directory.listFiles();
+        for (File file : files) {
+            String fileName = "";
+            fileName = file.getName();
+            lockers.put(fileName,new ReentrantReadWriteLock());
+        }
     }
 }
 
